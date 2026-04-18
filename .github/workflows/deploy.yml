@@ -1,0 +1,15 @@
+name: Deploy
+on:
+  push: { branches: [main] }
+permissions: { id-token: write, contents: read, packages: write }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: ${{ vars.AWS_ROLE }}, aws-region: us-east-1 }
+      - run: |
+          aws eks update-kubeconfig --name prod-cluster --region us-east-1
+          kubectl set image deployment/api api=${{ github.sha }}
+          kubectl rollout status deployment/api --timeout=5m
